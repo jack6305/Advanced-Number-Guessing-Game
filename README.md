@@ -55,14 +55,6 @@ The game maintains a leaderboard using leaderboard.json.
 - Python 3.x  
 - No external libraries needed (Pure Python Implementation)  
 
-▶️ Run the Game  
-1. Clone the repository:  
-   git clone https://github.com/your-username/Advanced-Number-Guessing-Game.git  
-2. Navigate to the project folder:  
-   cd Advanced-Number-Guessing-Game  
-3. Run the game:  
-   python game.py  
-
 ⚙️ Game Mechanics  
 
 1️⃣ Scoring System  
