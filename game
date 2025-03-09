@@ -1,0 +1,189 @@
+import random
+import time
+import json
+import os
+
+LEADERBOARD_FILE = "leaderboard.json"
+
+def welcome_message():
+    print("\n" + "="*40)
+    print("🎯 Welcome to the Advanced Number Guessing Game! 🎯")
+    print("="*40)
+    print("Try to guess the correct number within the given attempts.\n")
+
+def choose_game_mode():
+    print("Select Game Mode:")
+    print("1. Single Player")
+    print("2. Multiplayer")
+
+    while True:
+        try:
+            choice = int(input("Enter your choice (1-2): "))
+            if choice in [1, 2]:
+                return choice
+            else:
+                print("Invalid choice! Please enter 1 or 2.")
+        except ValueError:
+            print("Invalid input! Please enter a number.")
+
+def choose_difficulty():
+    print("\nChoose Difficulty Level:")
+    print("1. Easy (1-50, 10 attempts)")
+    print("2. Medium (1-100, 7 attempts)")
+    print("3. Hard (1-200, 5 attempts)")
+
+    while True:
+        try:
+            choice = int(input("Enter your choice (1-3): "))
+            if choice in [1, 2, 3]:
+                return choice
+            else:
+                print("Invalid choice! Please enter 1, 2, or 3.")
+        except ValueError:
+            print("Invalid input! Please enter a number.")
+
+def get_game_settings(choice):
+    if choice == 1:
+        return 50, 10
+    elif choice == 2:
+        return 100, 7
+    else:
+        return 200, 5
+
+def load_leaderboard():
+    if os.path.exists(LEADERBOARD_FILE):
+        with open(LEADERBOARD_FILE, "r") as file:
+            return json.load(file)
+    return {}
+
+def save_leaderboard(leaderboard):
+    with open(LEADERBOARD_FILE, "w") as file:
+        json.dump(leaderboard, file, indent=4)
+
+def display_leaderboard():
+    leaderboard = load_leaderboard()
+    print("\n🏆 Leaderboard 🏆")
+    if not leaderboard:
+        print("No high scores yet!")
+    else:
+        for name, score in sorted(leaderboard.items(), key=lambda x: x[1]):
+            print(f"{name}: {score} points")
+    print("="*40)
+
+def play_single_player():
+    name = input("Enter your name: ").strip()
+    difficulty = choose_difficulty()
+    max_num, max_attempts = get_game_settings(difficulty)
+    target = random.randint(1, max_num)
+    attempts = 0
+    score = 100
+    hints_used = 0
+    start_time = time.time()
+
+    print(f"\n🔢 I have chosen a number between 1 and {max_num}. Try to guess it!")
+    print(f"You have {max_attempts} attempts. Good luck!\n")
+
+    while attempts < max_attempts:
+        try:
+            guess = int(input("Enter your guess: "))
+            if guess < 1 or guess > max_num:
+                print(f"🚫 Out of range! Choose a number between 1 and {max_num}.")
+                continue
+        except ValueError:
+            print("❌ Invalid input! Please enter a number.")
+            continue
+
+        attempts += 1
+        score -= 10
+
+        if guess == target:
+            end_time = time.time()
+            elapsed_time = round(end_time - start_time, 2)
+            print(f"\n🎉 Congratulations, {name}! You guessed the correct number in {attempts} attempts.")
+            print(f"⏳ Time taken: {elapsed_time} seconds")
+            print(f"🏅 Final score: {score + 10 - (hints_used * 5)}\n")
+            
+            leaderboard = load_leaderboard()
+            leaderboard[name] = min(score + 10 - (hints_used * 5), leaderboard.get(name, float('inf')))
+            save_leaderboard(leaderboard)
+
+            return
+        elif guess < target:
+            print("📉 Too low! Try again.")
+        else:
+            print("📈 Too high! Try again.")
+
+        if attempts % 3 == 0:
+            hint = input("💡 Do you want a hint? (yes/no): ").strip().lower()
+            if hint in ["yes", "y"]:
+                hints_used += 1
+                if target % 2 == 0:
+                    print("Hint: The number is EVEN.")
+                else:
+                    print("Hint: The number is ODD.")
+
+        print(f"📌 Remaining attempts: {max_attempts - attempts}\n")
+
+    print(f"\n❌ Game Over! The correct number was {target}.")
+    print(f"🏅 Final score: {score - (hints_used * 5)}\n")
+
+def play_multiplayer():
+    print("\n🎮 Multiplayer Mode 🎮")
+    player1 = input("Enter Player 1's name: ").strip()
+    player2 = input("Enter Player 2's name: ").strip()
+    
+    print(f"\n{player1}, choose a number for {player2} to guess.")
+    while True:
+        try:
+            target = int(input(f"{player1}, enter a number (1-100): "))
+            if 1 <= target <= 100:
+                break
+            print("🚫 Out of range! Enter a number between 1 and 100.")
+        except ValueError:
+            print("❌ Invalid input! Enter a number.")
+
+    print("\n" * 20)  # Clears screen for fair play
+
+    attempts = 0
+    max_attempts = 7
+
+    print(f"{player2}, it's your turn to guess the number!")
+    while attempts < max_attempts:
+        try:
+            guess = int(input(f"{player2}, enter your guess: "))
+        except ValueError:
+            print("❌ Invalid input! Please enter a number.")
+            continue
+
+        attempts += 1
+
+        if guess == target:
+            print(f"\n🎉 {player2} wins! Guessed the number in {attempts} attempts.")
+            return
+        elif guess < target:
+            print("📉 Too low! Try again.")
+        else:
+            print("📈 Too high! Try again.")
+
+        print(f"📌 Remaining attempts: {max_attempts - attempts}\n")
+
+    print(f"\n❌ {player1} wins! {player2} couldn't guess the number.")
+
+def main():
+    while True:
+        welcome_message()
+        display_leaderboard()
+        mode = choose_game_mode()
+        
+        if mode == 1:
+            play_single_player()
+        else:
+            play_multiplayer()
+
+        retry = input("🔄 Do you want to play again? (yes/no): ").strip().lower()
+        if retry not in ["yes", "y"]:
+            print("🎮 Thanks for playing! Goodbye. 😊")
+            break
+
+if __name__ == "__main__":
+    main()
